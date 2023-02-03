@@ -100,7 +100,7 @@ class InterestBearing(AddonBase):
         if self.wait_for_roi(self.load_roi("InterestBearing/pointReward")):
             self.getRewardPoint()
         else:
-            self.logger.error("未检测到繁荣证章")
+            self.logger.error("未获得繁荣证章")
         self.day = 1
 
     @cli_command("bearing")
@@ -115,6 +115,7 @@ class InterestBearing(AddonBase):
         self.addon(CommonAddon).back_to_main()
         self.step = self.Period.gettingInfo
         while self.point < 6000:
+            screen = self.screenshot()
             if self.scence == self.Scence.main:
                 if self.step == self.Period.gettingInfo:
                     self.wait_and_tap_roi(
@@ -170,26 +171,31 @@ class InterestBearing(AddonBase):
                     self.scence = self.Scence.gameMap
                     continue
             if self.scence == self.Scence.gameMap:
+
                 # 第五天退出
                 if self.day >= 5:
                     self.scence = self.Scence.onExitGame
                     continue
-                if match := self.match_roi("InterestBearing/skipReport"):
+                if match := self.match_roi("InterestBearing/skipReport",
+                                           screenshot=screen):
                     self.tap_rect(match.bbox)
                     self.logger.info("跳过报告")
                     continue
                 # 每日日报
-                if match := self.match_roi("InterestBearing/dailyMessage"):
+                if match := self.match_roi("InterestBearing/dailyMessage",
+                                           screenshot=screen):
                     self.tap_rect(match.bbox)
                     self.logger.info("关闭日报")
                     continue
-                if match := self.match_roi("InterestBearing/maxMap"):
+                if match := self.match_roi("InterestBearing/maxMap",
+                                           screenshot=screen):
                     vw, vh = common.get_vwvh(self.screenshot())
                     self.tap_rect(
                         (48.063 * vw, 46.444 * vh, 52.000 * vw, 53.333 * vh))
                     self.logger.info("放大地图")
                     continue
-                if match := self.match_roi("InterestBearing/nextDay"):
+                if match := self.match_roi("InterestBearing/nextDay",
+                                           screenshot=screen):
                     vw, vh = common.get_vwvh(self.screenshot())
                     self.tap_rect(match.bbox)
                     self.day += 1
@@ -200,20 +206,23 @@ class InterestBearing(AddonBase):
                     if match := self.match_roi("InterestBearing/startBattle",
                                                fixed_position=False,
                                                mode="L",
-                                               method='sift'):
+                                               method='sift',
+                                               screenshot=screen):
                         self.scence = self.Scence.battleEntry
                         continue
                     if match := self.match_roi("InterestBearing/resourceArea",
                                                fixed_position=False,
                                                mode="L",
-                                               method='sift'):
+                                               method='sift',
+                                               screenshot=screen):
                         self.logger.info("发现资源区")
                         self.tap_rect(match.bbox)
                         continue
                     if match := self.match_roi("InterestBearing/huntArea",
                                                fixed_position=False,
                                                mode="L",
-                                               method='sift'):
+                                               method='sift',
+                                               screenshot=screen):
                         self.logger.info("发现捕猎区")
                         self.tap_rect(match.bbox)
                         continue
@@ -226,7 +235,8 @@ class InterestBearing(AddonBase):
                 #     self.logger.info("跳过报告")
                 #     self.scence = self.Scence.gameMap
                 #     continue
-                if match := self.match_roi("InterestBearing/dayDone"):
+                if match := self.match_roi("InterestBearing/dayDone",
+                                           screenshot=screen):
                     self.logger.info("决断达到上限,无法进入战斗")
                     self.scence = self.Scence.gameMap
                     continue
@@ -237,59 +247,80 @@ class InterestBearing(AddonBase):
                             self.screenshot()),
                                       post_delay=5)
                         self.scence = self.Scence.battleStage
+                        self.logger.info("确认开始行动")
                         continue
                 try:
                     if match := self.match_roi("InterestBearing/startBattle",
                                                fixed_position=False,
                                                mode="L",
-                                               method='sift'):
-                        self.logger.info("战斗")
+                                               method='sift',
+                                               screenshot=screen):
+                        self.logger.info("战斗！")
                         self.tap_rect(match.bbox)
                         continue
                 except:
                     continue
-                if match := self.match_roi("InterestBearing/prepareBattle"):
+                if match := self.match_roi("InterestBearing/prepareBattle",
+                                           screenshot=screen):
                     self.logger.info("行动准备")
                     self.tap_rect(match.bbox)
                     continue
-                if match := self.match_roi("InterestBearing/enterBattle"):
+                if match := self.match_roi("InterestBearing/enterBattle",
+                                           screenshot=screen):
                     self.logger.info("行动开始")
                     self.tap_rect(match.bbox)
                     continue
-                if match := self.match_roi("InterestBearing/packButton"):
+                if match := self.match_roi("InterestBearing/packButton",
+                                           screenshot=screen):
                     self.logger.info("进入战斗界面")
                     self.scence = self.Scence.battleStage
-                    self.delay()
+                    self.delay(1)
                     continue
             if self.scence == self.Scence.battleStage:
-                self.logger.info("尝试退出行动")
-                if match := self.match_roi("InterestBearing/exitBattleButton"):
+                if match := self.match_roi("InterestBearing/exitBattleButton",
+                                           screenshot=screen):
+                    self.logger.info("尝试退出行动by exit")
                     self.tap_rect(match.bbox)
-                elif match := self.match_roi("InterestBearing/packButton"):
+                    self.delay(2)
+                    continue
+                elif match := self.match_roi("InterestBearing/packButton",
+                                             screenshot=screen):
+                    self.logger.info("尝试退出行动by pack")
                     vw, vh = common.get_vwvh(self.screenshot())
                     self.tap_rect(
                         ((2.625 * vw, 3.222 * vh, 8.438 * vw, 12.444 * vh)))
-                if match := self.match_roi(
-                        "InterestBearing/comfirmBattleExit"):
+                    self.delay(2)
+                    continue
+                if match := self.match_roi("InterestBearing/comfirmBattleExit",
+                                           screenshot=screen):
+                    self.logger.info("确认退出")
                     self.tap_rect(match.bbox)
                     self.scence = self.Scence.onExitBattle
+                    self.delay(3)
                     continue
             if self.scence == self.Scence.onExitBattle:
                 self.wait_and_tap_roi(self.load_roi("InterestBearing/reward"))
                 self.scence = self.Scence.gameMap
+                self.logger.info("确认退出战利品")
+                continue
             if self.scence == self.Scence.onExitGame:
-                if match := self.match_roi("InterestBearing/skipReport"):
+                if match := self.match_roi("InterestBearing/skipReport",
+                                           screenshot=screen):
                     self.tap_rect(match.bbox)
                     self.logger.info("跳过报告")
                     continue
-                if match := self.match_roi("InterestBearing/dailyMessage"):
+                if match := self.match_roi("InterestBearing/dailyMessage",
+                                           screenshot=screen):
                     self.tap_rect(match.bbox)
                     self.logger.info("关闭日报")
                     continue
-                if match := self.match_roi("InterestBearing/exitGameButton"):
+                if match := self.match_roi("InterestBearing/exitGameButton",
+                                           screenshot=screen):
                     self.tap_rect(match.bbox)
+                    self.logger.info("退出演算")
                     continue
-                if match := self.match_roi("InterestBearing/giveUp"):
+                if match := self.match_roi("InterestBearing/giveUp",
+                                           screenshot=screen):
                     self.scence = self.Scence.eventCover
                     self.step = self.Period.loopEnd
                     continue
