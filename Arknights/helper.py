@@ -11,10 +11,14 @@ from automator import BaseAutomator
 
 logger = logging.getLogger('helper')
 
+
 class ArknightsHelper(BaseAutomator):
+
     def on_device_connected(self):
-        if self.viewport[1] < 720 or Fraction(self.viewport[0], self.viewport[1]) < Fraction(16, 9):
-            title = '设备当前分辨率（%dx%d）不符合要求' % (self.viewport[0], self.viewport[1])
+        if self.viewport[1] < 720 or Fraction(
+                self.viewport[0], self.viewport[1]) < Fraction(16, 9):
+            title = '设备当前分辨率（%dx%d）不符合要求' % (self.viewport[0],
+                                             self.viewport[1])
             body = '需要宽高比等于或大于 16∶9，且渲染高度不小于 720。'
             details = None
             if Fraction(self.viewport[1], self.viewport[0]) >= Fraction(16, 9):
@@ -38,11 +42,10 @@ class ArknightsHelper(BaseAutomator):
         from .addons.record import RecordAddon
         from .addons.riic import RIICAddon
 
-        
         from .addons.contrib.grass_on_aog import GrassAddOn
 
         from .addons.contrib.activity import ActivityAddOn
-        
+
         try:
             from .addons.contrib.start_sp_stage import StartSpStageAddon
         except Exception:
@@ -51,3 +54,4 @@ class ArknightsHelper(BaseAutomator):
         from .addons.contrib.plan import PlannerAddOn
 
         from .addons import sof_nav
+        from .addons import bearing
