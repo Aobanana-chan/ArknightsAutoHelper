@@ -60,3 +60,57 @@ def get_recruit_tags(img):
             cookedtags.append(tag)
 
     return cookedtags
+def get_recruit_tags_with_position(img):
+    import textdistance
+    vw, vh = common.get_vwvh(img)
+    position =[
+        (50*vw-36.481*vh, 50.185*vh, 50*vw-17.315*vh, 56.111*vh),
+    (50*vw-13.241*vh, 50.185*vh, 50*vw+6.111*vh, 56.111*vh),
+    (50*vw+10.000*vh, 50.185*vh, 50*vw+29.259*vh, 56.111*vh),
+    (50*vw-36.481*vh, 60.278*vh, 50*vw-17.315*vh, 66.019*vh),
+    (50*vw-13.241*vh, 60.278*vh, 50*vw+6.111*vh, 66.019*vh)
+
+    ]
+    tagimgs = [
+        img.crop(position[0]).convert('L'),
+        img.crop(position[1]).convert('L'),
+        img.crop(position[2]).convert('L'),
+        img.crop(position[3]).convert('L'),
+        img.crop(position[4]).convert('L')
+    ]
+
+    tagimgs = [Image.fromarray(cv2.threshold(img.array, 127, 255, cv2.THRESH_BINARY_INV)[1]) for img in tagimgs]
+
+    eng = ocr.acquire_engine_global_cached('zh-cn')
+    recognize = lambda img: eng.recognize(img, int(vh * 20), hints=[ocr.OcrHint.SINGLE_LINE], char_whitelist=known_tagchars).text.replace(' ', '')
+    cookedtags = []
+    p = 0
+    for img in tagimgs:
+        logger.logimage(img)
+        tag = recognize(img)
+        logger.logtext(tag)
+        if not tag:
+            p+=1
+            continue
+        if tag in known_tags:
+            cookedtags.append((tag,position[p]))
+            p+=1
+            continue
+        distances = [(target, textdistance.levenshtein(tag, target)) for target in known_tags.difference(cookedtags)]
+        distances.sort(key=lambda x: x[1])
+        mindistance = distances[0][1]
+        matches = [x[0] for x in distances if x[1] == mindistance]
+        if mindistance > 2:
+            logger.logtext('autocorrect: minimum distance %d too large' % mindistance)
+            cookedtags.append((tag,position[p]))
+            p+=1
+        elif len(matches) == 1:
+            logger.logtext('autocorrect to %s, distance %d' % (matches[0], mindistance))
+            cookedtags.append(matches[0],position[p])
+            p+=1
+        else:
+            logger.logtext('autocorrect: failed to match in %s with distance %d' % (','.join(matches), mindistance))
+            cookedtags.append((tag,position[p]))
+            p+=1
+
+    return cookedtags
