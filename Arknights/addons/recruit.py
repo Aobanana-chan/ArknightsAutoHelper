@@ -10,11 +10,12 @@ class RecruitAddon(AddonBase):
             return 0
 
     def selectMax(self, result) -> tuple:
-        maxrank = self.selectLowestRank(result[0][1])
-        maxtag = result[0][0]
+        maxrank = 3
+        maxtag = ()
         for tags, operators, rank in result:
             if self.selectLowestRank(operators) > maxrank:
                 maxtag = tags
+                maxrank = self.selectLowestRank(operators)
         return maxtag
 
     def auto_recruit(self, count: int):
