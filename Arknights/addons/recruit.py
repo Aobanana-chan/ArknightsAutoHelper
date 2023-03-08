@@ -3,19 +3,13 @@ from automator import AddonBase, cli_command
 
 class RecruitAddon(AddonBase):
 
-    def selectLowestRank(self, l: list[tuple[str, int]]) -> int:
-        try:
-            return l[len(l) - 1][1]
-        except:
-            return 0
-
     def selectMax(self, result) -> tuple:
-        maxrank = 3
+        maxrank = 0
         maxtag = ()
         for tags, operators, rank in result:
-            if self.selectLowestRank(operators) > maxrank:
+            if rank > maxrank:
                 maxtag = tags
-                maxrank = self.selectLowestRank(operators)
+                maxrank = rank
         return maxtag
 
     def auto_recruit(self, count: int):
